@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class NetworkManager : MonoBehaviour {
-    public string serverRoot = "http://localhost:1337/";
+    public string serverRoot = "http://645b3cfd.ngrok.io/";
 
 	public void uploadData(string uri, string serializedData) {
 		StartCoroutine(UploadData(uri, serializedData));

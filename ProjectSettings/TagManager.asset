@@ -6,6 +6,10 @@ TagManager:
   tags:
   - PickupObjects
   - World
+  - Stone
+  - Mobile
+  - Money
+  - Sword
   layers:
   - Default
   - TransparentFX
