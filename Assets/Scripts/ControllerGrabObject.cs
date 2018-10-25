@@ -17,6 +17,7 @@ public class ControllerGrabObject : MonoBehaviour {
 	private List<GameObject> allObjects = new List<GameObject>();
 	private List<GameObject> objectsPicked = new List<GameObject>();
 	private int correctPos = -1;	// -1 Nothing, 0 is False, 1 is True
+
 	
 	private SteamVR_Controller.Device Controller
 	{
