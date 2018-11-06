@@ -274,8 +274,8 @@ public class ControllerGrabObject : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void Update () {
-
+	void Update ()
+	{
 		if (_evalPhase & _objectInHand & Controller.GetPress(TouchpadButton))
 		{
 			IfZoneCorrect();
