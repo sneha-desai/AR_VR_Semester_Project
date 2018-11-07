@@ -6,9 +6,10 @@ using System.Collections;
 public class DrawLineManager : MonoBehaviour
 {
 
-	public SteamVR_TrackedObject _trackedObj;
+	private SteamVR_TrackedObject _trackedObj;
 	private LineRenderer currLine;
 	private int numClicks = 0;
+	private Material lMat;
 	
 	private SteamVR_Controller.Device Controller
 	{
@@ -24,6 +25,11 @@ public class DrawLineManager : MonoBehaviour
 		_trackedObj = GetComponent<SteamVR_TrackedObject>();				
 	}
 
+	void Start()
+	{
+		this.lMat = new Material(Shader.Find("Sprites/Default"));
+	}
+
 	void Update()
 	{
 		if (Controller.GetHairTriggerDown())
@@ -37,6 +43,15 @@ public class DrawLineManager : MonoBehaviour
 			currLine.SetVertexCount(numClicks + 1);
 			currLine.SetPosition(numClicks, _trackedObj.transform.position);
 			numClicks++;
+		}
+
+		if (currLine != null)
+		{
+			Debug.Log("Changing Colors");
+			Debug.Log(Color.cyan);
+			Debug.Log(ColorManager.Instance.GetCurrentColor());
+			currLine.material = new Material(this.lMat);
+			currLine.SetColors(ColorManager.Instance.GetCurrentColor(), ColorManager.Instance.GetCurrentColor());
 		}
 	}
 }
