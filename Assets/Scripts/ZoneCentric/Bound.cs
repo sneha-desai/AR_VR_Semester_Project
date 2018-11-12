@@ -315,7 +315,7 @@ namespace ZoneCentric
 		private void Update () 
 		{
 			if (RotateAvatar) RotateObject(_avatar);
-
+//			Debug.Log(HUMAN.is);
 			if (HUMAN.IsCalibrated())
 			{
 				if (!_ExperimentInProgress)
