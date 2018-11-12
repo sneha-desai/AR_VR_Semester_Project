@@ -62,7 +62,7 @@ namespace _Andre._Scripts
             set { _selected = value; }
         }
 
-        private void OnLaserDown()
+        public void OnLaserDown()
         {
             Debug.Log("OnLaserDown");
             if (!_selected)

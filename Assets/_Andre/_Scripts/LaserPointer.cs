@@ -6,7 +6,7 @@ namespace _Andre._Scripts
     {
         // 1
         public GameObject LaserPrefab;
-        
+
         private SteamVR_TrackedObject _trackedObj;
 
 // 2
@@ -17,6 +17,7 @@ namespace _Andre._Scripts
 
 // 4
         private Vector3 _hitPoint;
+        private float _distance;
 
 
         private ZoneVR _zoneHovered;
@@ -57,35 +58,51 @@ namespace _Andre._Scripts
         {
             if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
             {
-//                Debug.Log("Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad");
-                RaycastHit hit;
-
-                // 2
-                if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
+                if (_zoneHovered != null)
                 {
-                    Debug.Log(hit.collider.GetComponent<ZoneVR>());
+                    _zoneHovered.OnLaserDown();
+                }
+            }
+            
+
+            RaycastHit hit;
+
+            // 2
+            if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
+            {
                     ZoneVR zone = hit.collider.GetComponent<ZoneVR>();
                     if (zone && !zone.IsHighlighted)
                     {
+                        if (_zoneHovered)
+                        {
+                            _zoneHovered.OnLaserExit();
+                            _zoneHovered = null;
+                        }
                         _zoneHovered = zone;
                         zone.OnLaserEnter();
                     }
+//
+//                    Debug.Log("Hit Point: " + hit.point);
+//                    Debug.Log("Hit Distance: " + hit.distance);
                     _hitPoint = hit.point;
-                    ShowLaser(hit.distance);
-                } else if (_zoneHovered != null)
+                    _distance = hit.distance;
+                    ShowLaser(_distance);
+            }
+            else
+            {
+                _hitPoint = _trackedObj.transform.forward * 10;
+                _distance = Vector3.Distance(_trackedObj.transform.position, _hitPoint);
+                Debug.Log("Hit Point: " + _hitPoint);
+                Debug.Log("Hit Distance: " + _distance);
+                if (_zoneHovered != null)
                 {
                     _zoneHovered.OnLaserExit();
-                    _zoneHovered = null;    
+                    _zoneHovered = null;
                 }
+                
+                ShowLaser(_distance);
             }
-            else // 3
-            {
-                ShowLaser(1);
-                _hitPoint = _laserTransform.forward * 1;
-
-//                _laser.SetActive(false);
-
-            }
+            
         }
     }
 }
