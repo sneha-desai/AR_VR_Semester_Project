@@ -3,10 +3,11 @@ using UnityEngine;
 
 namespace _Andre._Scripts
 {
-    public class Zone : MonoBehaviour
+    public class ZoneVR : MonoBehaviour
     {
         public Color OriginalColor = new Color(1, 1, 1);
         public Color HighlightColor = new Color(1, 0.3f, 0.3f);
+        public bool IsHighlighted = false;
         private bool _selected = false;
         public Action<Zone> OnSelect;
 
@@ -15,6 +16,7 @@ namespace _Andre._Scripts
         // Use this for initialization
         void Start()
         {
+            IsHighlighted = false;
             _zonesController = FindObjectOfType(typeof(ZonesController)) as ZonesController;
 
             GetComponent<Renderer>().material.color = new Color(1, 1, 1);
@@ -26,19 +28,20 @@ namespace _Andre._Scripts
         {
         }
 
-        public void OnMouseEnter()
+        public void OnLaserEnter()
         {
-            Debug.Log(gameObject.name+"OnMouseEnter");
+            Debug.Log("OnLaserEnter");
             GetComponent<Renderer>().material.color = HighlightColor;
+            IsHighlighted = true;
             // Here some logic to highlight okay?
         }
 
-        public void OnMouseExit()
+        public void OnLaserExit()
         {
             if (!_selected)
                 GetComponent<Renderer>().material.color = new Color(1, 1, 1);
-
-            Debug.Log("OnMouseExit");
+            IsHighlighted = false;
+            Debug.Log("OnLaserExit");
         }
 
         public Color OriginalColor1
@@ -59,9 +62,9 @@ namespace _Andre._Scripts
             set { _selected = value; }
         }
 
-        private void OnMouseDown()
+        private void OnLaserDown()
         {
-            Debug.Log("OnMouseDown");
+            Debug.Log("OnLaserDown");
             if (!_selected)
             {
                 if (_zonesController.SelectedCount < 10)
