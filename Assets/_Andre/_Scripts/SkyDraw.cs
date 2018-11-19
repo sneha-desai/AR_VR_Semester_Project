@@ -52,6 +52,7 @@ public class SkyDraw : MonoBehaviour
                 DrawGameObject(PrefabArray[i], DrawPointTransform.position);
             }        
         }
+        //Camera movement using left trackpad (or any other trackpad)
 //        if (Controller2.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
 //        {
 //            Vector2 axis = Controller2.GetAxis();
