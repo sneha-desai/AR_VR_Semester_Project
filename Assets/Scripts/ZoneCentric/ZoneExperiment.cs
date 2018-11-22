@@ -80,7 +80,6 @@ namespace ZoneCentric
 			_timer = TimeLimit;
 			_numCorrect = 0;
 			_numAttempted = 0;
-			_currentSubZone = 0;
 			_experiment = Experiment.NONE;
 			_lifeRemaining = MaxRetry;
 			
@@ -452,9 +451,8 @@ namespace ZoneCentric
 		// Update is called once per frame
 		private void Update ()
 		{
-			if (RotateAvatar) RotateObject(_avatar);
+//			if (RotateAvatar) RotateObject(_avatar);
 
-			
 			if (!_experimentInProgress)
 			{
 //				Instruction.text = "Welcome to Proprioceptive Experiment!";
