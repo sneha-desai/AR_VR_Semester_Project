@@ -264,15 +264,18 @@ namespace ZoneCentric
 		private static void RestartLevel()
 		{
 			_levelInProgress = false;
+			DestroySphereWithTag(AvatarSphereTag);
 			_objectCentricZones.Clear();
 			_avatarSpheres.Clear();
 			_ifRestart = true;
+			_lifeRemaining--;
 		}
 		
 		private static void NextLevel()
 		{
 			_currentLevelIndex++;
 			_levelInProgress = false;
+			DestroySphereWithTag(AvatarSphereTag);
 			_objectCentricZones.Clear();
 			_avatarSpheres.Clear();
 			_lifeRemaining = MaxRetry;
@@ -353,7 +356,6 @@ namespace ZoneCentric
 				}
 				else
 				{
-					Debug.Log(_currentLevelIndex + Space + _objectCentricZones.Count);
 					if (!Controller.GetHairTriggerDown()) return;
 					CreateZones(ControllerObject.transform.position);
 				}
@@ -376,18 +378,18 @@ namespace ZoneCentric
 					if (IfQualify())
 					{
 						Debug.Log("YOU QUALIFY!!!!!!!!!!!!!!");
-						DestroySphereWithTag(AvatarSphereTag);
 						NextLevel();
 					}
 					else
 					{
+						RestartLevel();
 						if (_lifeRemaining <= 0)
 						{
 							Instruction.text = "GAME OVER! To restart, press LEFT for ZoneCentric and RIGHT for ObjectCentric on Touchpad";
+							Debug.Log("Game Over");
 							ResetExperiment();
 							return;
 						}
-						RestartLevel();
 						Debug.Log("Restart Level");		
 					}					
 				}

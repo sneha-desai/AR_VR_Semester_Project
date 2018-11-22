@@ -3,7 +3,7 @@ using UnityEngine.Serialization;
 
 namespace _Andre._Scripts
 {
-    public class SkyDraw : MonoBehaviour
+    public class SkyDrawVR : MonoBehaviour
     {
         public Transform DrawPointTransform;
         public Transform[] PrefabArray;
