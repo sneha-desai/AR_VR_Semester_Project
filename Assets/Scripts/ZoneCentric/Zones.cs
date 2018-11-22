@@ -8,6 +8,7 @@ namespace ZoneCentric
     {
         public int NumSubZones;
         public List<float> SubZones;
+        public List<float> CenterOfSubZones;
 
         public Zones()
         {

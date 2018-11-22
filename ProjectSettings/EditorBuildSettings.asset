@@ -4,4 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/ZoneCentric.unity
+    guid: a5aa62c26b31a5f4e8ac66e437fbd13d
+  - enabled: 1
+    path: Assets/Scenes/PerceptionExperiment.unity
+    guid: 357eb90cf823248889b85105631bd6be
+  m_configObjects: {}
