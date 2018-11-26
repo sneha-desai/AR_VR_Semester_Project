@@ -3,14 +3,13 @@ using UnityEngine.Serialization;
 
 namespace _Andre._Scripts
 {
-    public class SkyDrawVR : MonoBehaviour
+    public class SkyDrawVr : MonoBehaviour
     {
         public Transform DrawPointTransform;
         public Transform[] PrefabArray;
         private float _cooldown = 1.0f;
 
         private SteamVR_TrackedObject _trackedObj;
-        [FormerlySerializedAs("_trackedObj2")] public SteamVR_TrackedObject TrackedObj2;
 
 
         private Vector2 _axis;
@@ -30,6 +29,10 @@ namespace _Andre._Scripts
         {
             _trackedObj = GetComponent<SteamVR_TrackedObject>();
             _nextPrefab = PrefabArray[0];
+            DrawPointTransform = Instantiate(_nextPrefab);
+            DrawPointTransform.parent = _trackedObj.transform;
+            DrawPointTransform.localPosition = new Vector3(0,0,10);
+            
         }
 
         void Update()
