@@ -4,10 +4,6 @@ namespace _Andre._Scripts
 {
     public class LaserPointer : MonoBehaviour
     {
-        // 1
-        public Transform cameraRigTransform;
-
-// 2
         public GameObject teleportReticlePrefab;
 
 // 3
@@ -15,9 +11,6 @@ namespace _Andre._Scripts
 
 // 4
         private Transform teleportReticleTransform;
-
-// 5
-        public Transform headTransform;
 
 // 6
         public Vector3 teleportReticleOffset;
@@ -79,13 +72,15 @@ namespace _Andre._Scripts
         // Update is called once per frame
         void Update()
         {
-            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
-            {
-                if (_zoneHovered != null)
-                {
-                    _zoneHovered.OnLaserDown();
-                }
-            }
+            
+            // It was for zones...
+//            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
+//            {
+//                if (_zoneHovered != null)
+//                {
+//                    _zoneHovered.OnLaserDown();
+//                }
+//            }
 
 
             RaycastHit hit;
@@ -93,22 +88,19 @@ namespace _Andre._Scripts
             // 2
             if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
             {
-                ZoneVR zone = hit.collider.GetComponent<ZoneVR>();
-                if (zone && !zone.IsHighlighted)
-                {
-                    if (_zoneHovered)
-                    {
-                        _zoneHovered.OnLaserExit();
-                        _zoneHovered = null;
-                    }
+//                ZoneVR zone = hit.collider.GetComponent<ZoneVR>();
+//                if (zone && !zone.IsHighlighted) 
+//                {
+//                    if (_zoneHovered)
+//                    {
+//                        _zoneHovered.OnLaserExit();
+//                        _zoneHovered = null;
+//                    }
 
-                    _zoneHovered = zone;
-                    zone.OnLaserEnter();
-                }
+//                    _zoneHovered = zone;
+//                    zone.OnLaserEnter();
+//                }
 
-//
-//                    Debug.Log("Hit Point: " + hit.point);
-//                    Debug.Log("Hit Distance: " + hit.distance);
                 _hitPoint = hit.point;
                 _distance = hit.distance;
                 ShowLaser(_distance);
@@ -120,18 +112,18 @@ namespace _Andre._Scripts
             }
             else
             {
-                _hitPoint = _trackedObj.transform.forward * 10;
-                _distance = Vector3.Distance(_trackedObj.transform.position, _hitPoint);
-                Debug.Log("Hit Point: " + _hitPoint);
-                Debug.Log("Hit Distance: " + _distance);
-                if (_zoneHovered != null)
-                {
-                    _zoneHovered.OnLaserExit();
-                    _zoneHovered = null;
-                }
+//                _hitPoint = _trackedObj.transform.forward * 10;
+//                _distance = Vector3.Distance(_trackedObj.transform.position, _hitPoint);
+//                Debug.Log("Hit Point: " + _hitPoint);
+//                Debug.Log("Hit Distance: " + _distance);
+//                if (_zoneHovered != null)
+//                {
+//                    _zoneHovered.OnLaserExit();
+//                    _zoneHovered = null;
+//                }
 
-                ShowLaser(_distance);
-                reticle.SetActive(false);
+//                ShowLaser(_distance);
+//                reticle.SetActive(false);
             }
         }
     }
