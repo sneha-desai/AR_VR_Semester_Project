@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.UI;
 using Valve.VR;
 using Random = System.Random;
 
@@ -23,6 +25,10 @@ namespace ZoneCentric
 		private static GameObject _zoneSphere;
 		private static GameObject _currentSphere;
 		private static GameObject _avatar;
+		private static GameObject _canvas;
+		
+		private static Slider _timeSlider;
+		private static Slider _accuSlider;
 
 		private static List<Zones> _zoneCentricZones;
 		private static List<GameObject> _avatarSpheres;
@@ -43,7 +49,10 @@ namespace ZoneCentric
 		private const string AvatarSphereTag = "AvatarSpheres";
 		private const string TestSphereTag = "TestSpheres";
 		private const float TimeLimit = 40.0f;
+		
+		
 
+		
 		private enum Experiment
 		{
 			NONE,
@@ -69,6 +78,9 @@ namespace ZoneCentric
 			Instruction = GameObject.Find("Instruction").GetComponent<TextMesh>();
 			_cameraGameObject = GameObject.Find("Camera (eye)");
 			_avatar = GameObject.Find("Avatar");
+			_canvas = GameObject.Find("Canvas");
+			_accuSlider = GameObject.Find("Accuracy").GetComponent<Slider>();
+			_timeSlider = GameObject.Find("Time").GetComponent<Slider>();
 			_user = _userGameObject.GetComponent<User>();
 
 			_objectCentricZones = new List<Vector3>();
@@ -85,6 +97,8 @@ namespace ZoneCentric
 			
 			Instruction.text =
 				"To start, press LEFT on Touchpad for Zone Centric and RIGHT for Object Centric Experiment";
+
+
 		}
 
 		private void Awake()
@@ -92,9 +106,22 @@ namespace ZoneCentric
 			ControllerObject = GetComponent<SteamVR_TrackedObject>();
 		}
 
+		private static void SetColor(Slider obj, float threshold, Color right, Color wrong)
+		{
+//			var colors = obj.fillRect;
+			if (obj.value > threshold)
+			{
+				colors.color = right;
+			}
+			else
+			{
+				colors.color = wrong;
+			}
+		}
+		
 		private static GameObject DrawSphere(Vector3 center, Transform parentTransform = null, string tag = "")
 		{
-			GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+			var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 			if (parentTransform)
 				sphere.transform.parent = parentTransform;
 			if (!string.IsNullOrEmpty(tag))
@@ -102,7 +129,7 @@ namespace ZoneCentric
 			sphere.transform.position = center;
 			sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
-			sphere.GetComponent<Renderer>().material.color = Color.Lerp(Color.magenta, Color.yellow, center.y);
+			sphere.GetComponent<Renderer>().material.color = Color.magenta;
 			return sphere;
 		}
 
@@ -201,6 +228,7 @@ namespace ZoneCentric
 			_numAttempted = 0;
 			DestroySphereWithTag(AvatarSphereTag);
 			DestroySphereWithTag(TestSphereTag);
+			_canvas.SetActive(false);
 		}
 
 		private static bool CheckPointInZone(Vector3 cartesianPoint)
@@ -238,6 +266,7 @@ namespace ZoneCentric
 
 		private Experiment ChooseExperiment()
 		{
+			_canvas.SetActive(false);
 			if (!Controller.GetPressDown(TouchpadButton)) return _experiment;
 			var touchpad = (Controller.GetAxis(Valve.VR.EVRButtonId.k_EButton_Axis0));
 			if (touchpad.x < 0)
@@ -258,6 +287,7 @@ namespace ZoneCentric
 			_levelInProgress = true;
 			_numCorrect = 0;
 			_numAttempted = 0;
+			_canvas.SetActive(true);
 		}
 
 		private static void RestartLevel()
@@ -268,6 +298,7 @@ namespace ZoneCentric
 			_avatarSpheres.Clear();
 			_ifRestart = true;
 			_lifeRemaining--;
+			_canvas.SetActive(false);
 		}
 		
 		private static void NextLevel()
@@ -279,12 +310,19 @@ namespace ZoneCentric
 			_avatarSpheres.Clear();
 			_lifeRemaining = MaxRetry;
 			_ifRestart = false;
+			_canvas.SetActive(false);
 		}
 
 		private static Vector3 GenerateSpherePlacement(int currentLevelIndex)
 		{
 			var subzones = _zoneCentricZones[currentLevelIndex].SubZones;
-			_currentSubZone = Rnd.Next(subzones.Count/4);
+			var rndIndex = Rnd.Next(subzones.Count / 4);
+			while (rndIndex == _currentSubZone)
+			{
+				rndIndex = Rnd.Next(subzones.Count / 4);
+			}
+
+			_currentSubZone = rndIndex;
 			var rndFloatPolar = (float) Rnd.NextDouble();
 			var rndFloatElevation = (float) Rnd.NextDouble();
 			var polarRange = subzones[4 * _currentSubZone + 1] - subzones[4 * _currentSubZone + 0];
@@ -362,7 +400,13 @@ namespace ZoneCentric
 			else
 			{
 				_timer -= Time.deltaTime;
-				Instruction.text = string.Format("Time: {0:0.00} Num Correct: {1} Num Attempted: {2}", _timer, _numCorrect, _numAttempted);
+				_timeSlider.value = _timer/TimeLimit;
+
+				SetColor(_accuSlider, 0.9f, Color.green, Color.red);
+				SetColor(_timeSlider, 0.25f, Color.blue, Color.red);
+
+				_accuSlider.value = (float) _numCorrect / _numAttempted;
+				Instruction.text = "";
 				
 				if (_timer > 0)
 				{
@@ -430,7 +474,10 @@ namespace ZoneCentric
 			else
 			{
 				_timer -= Time.deltaTime;
-				Instruction.text = string.Format("Time: {0:0.00} Num Correct: {1} Num Attempted: {2}", _timer, _numCorrect, _numAttempted);
+				_timeSlider.value = (TimeLimit - _timer)/TimeLimit;
+				_accuSlider.value = (float) _numCorrect / _numAttempted;
+
+				Instruction.text = "";
 
 				if (IfQualify())
 				{
@@ -451,8 +498,6 @@ namespace ZoneCentric
 		// Update is called once per frame
 		private void Update ()
 		{
-//			if (RotateAvatar) RotateObject(_avatar);
-
 			if (!_experimentInProgress)
 			{
 //				Instruction.text = "Welcome to Proprioceptive Experiment!";
