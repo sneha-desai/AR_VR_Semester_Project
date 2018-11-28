@@ -49,9 +49,11 @@ namespace ZoneCentric
 		private const string AvatarSphereTag = "AvatarSpheres";
 		private const string TestSphereTag = "TestSpheres";
 		private const float TimeLimit = 40.0f;
-		
-		
 
+		private static bool _errorThresholdSet;
+		private static float _errorThresholdValue;	// Radius for OBJECT centric and theta (in degrees) for ZONE centric
+		private static GameObject _errorThresholdSphere;
+		private static GameObject _errorThresholdParentSphere;
 		
 		private enum Experiment
 		{
@@ -81,6 +83,10 @@ namespace ZoneCentric
 			_canvas = GameObject.Find("Canvas");
 			_accuSlider = GameObject.Find("Accuracy").GetComponent<Slider>();
 			_timeSlider = GameObject.Find("Time").GetComponent<Slider>();
+			_errorThresholdSphere = GameObject.Find("ErrorThresholdSphere");
+			_errorThresholdParentSphere = GameObject.Find("ErrorThresholdParentSphere");
+			
+			
 			_user = _userGameObject.GetComponent<User>();
 
 			_objectCentricZones = new List<Vector3>();
@@ -96,9 +102,9 @@ namespace ZoneCentric
 			_lifeRemaining = MaxRetry;
 			
 			Instruction.text =
-				"To start, press LEFT on Touchpad for Zone Centric and RIGHT for Object Centric Experiment";
+				"To start, press <b><size=16>LEFT</size></b> on Touchpad for Zone Centric or <b><size=16>RIGHT</size></b> for Object Centric Experiment";
 
-
+			_errorThresholdSet = false;
 		}
 
 		private void Awake()
@@ -108,15 +114,17 @@ namespace ZoneCentric
 
 		private static void SetColor(Slider obj, float threshold, Color right, Color wrong)
 		{
-//			var colors = obj.fillRect;
-			if (obj.value > threshold)
-			{
-				colors.color = right;
-			}
-			else
-			{
-				colors.color = wrong;
-			}
+			var colors = obj.fillRect.GetComponent<Image>();
+			colors.color = obj.value > threshold ? right : wrong;
+		}
+
+		private static void UpdateSliders()
+		{
+			_timer -= Time.deltaTime;
+			_timeSlider.value = _timer/TimeLimit;
+			_accuSlider.value = (float) _numCorrect / _numAttempted;
+			SetColor(_accuSlider, 0.9f, Color.green, Color.red);
+			SetColor(_timeSlider, 0.25f, Color.blue, Color.red);
 		}
 		
 		private static GameObject DrawSphere(Vector3 center, Transform parentTransform = null, string tag = "")
@@ -191,7 +199,7 @@ namespace ZoneCentric
 			_numAttempted += 1;
 		}
 
-		private static bool CheckNearestZone(Vector3 clickedPoint)
+		private static int GetNearestZone(Vector3 clickedPoint)
 		{
 			var minDist = float.PositiveInfinity;
 			var idx = 0;
@@ -208,13 +216,22 @@ namespace ZoneCentric
 
 				idx += 1;
 			}
-			return _currentSubZone == nearestIndex;
+
+			return nearestIndex;
+		}
+
+		private static bool CheckNearestZone(Vector3 clickedPoint)
+		{
+			int nearestPointIndex = GetNearestZone(clickedPoint);
+			Vector3 nearestPoint = _objectCentricZones[nearestPointIndex];
+			return (_currentSubZone == nearestPointIndex && (Vector3.Distance(clickedPoint, nearestPoint) < _errorThresholdValue));
 		}
 
 		private static void ResetExperiment()
 		{
 			_levelInProgress = false;
 			_experimentInProgress = false;
+			_errorThresholdSet = false;
 			_ifRestart = false;
 			_currentLevelIndex = 0;
 			_user.Reset();
@@ -229,16 +246,22 @@ namespace ZoneCentric
 			DestroySphereWithTag(AvatarSphereTag);
 			DestroySphereWithTag(TestSphereTag);
 			_canvas.SetActive(false);
+			_avatar.SetActive(false);
+
 		}
 
 		private static bool CheckPointInZone(Vector3 cartesianPoint)
 		{
 			List<float> _subzones = _zoneCentricZones[_currentLevelIndex].SubZones;
-			float minPolar = _subzones[4 * _currentSubZone + 0];
-			float maxPolar = _subzones[4 * _currentSubZone + 1];
-			float minElevation = _subzones[4 * _currentSubZone + 2];
-			float maxElevation = _subzones[4 * _currentSubZone + 3];
+			float midPolar = (_subzones[4 * _currentSubZone + 0] + _subzones[4 * _currentSubZone + 1]) / 2;
+			float midElevation = (_subzones[4 * _currentSubZone + 2] + _subzones[4 * _currentSubZone + 3]) / 2;
+			float minPolar = Mathf.Max(_subzones[4 * _currentSubZone + 0], midPolar - _errorThresholdValue);
+			float maxPolar = Mathf.Min(_subzones[4 * _currentSubZone + 1], midPolar + _errorThresholdValue);
+			float minElevation = Mathf.Max(_subzones[4 * _currentSubZone + 2], midElevation - _errorThresholdValue);
+			float maxElevation = Mathf.Min(_subzones[4 * _currentSubZone + 3], midElevation + _errorThresholdValue);
 
+			Debug.Log("midpolar: " + midPolar + Space + "minPolar " + minPolar + Space + "maxpolar " + Space + maxPolar + Space  + "midelevation " + midElevation + Space + "minElevation " + minElevation + Space + "maxelevation " + maxElevation);
+			
 			var polarPoint = PolarCoordinates.FromCartesian(cartesianPoint);
 			
 			var polar = PolarCoordinates.RadToDeg(polarPoint.Polar);
@@ -267,6 +290,8 @@ namespace ZoneCentric
 		private Experiment ChooseExperiment()
 		{
 			_canvas.SetActive(false);
+			_errorThresholdParentSphere.SetActive(false);
+			_avatar.SetActive(false);
 			if (!Controller.GetPressDown(TouchpadButton)) return _experiment;
 			var touchpad = (Controller.GetAxis(Valve.VR.EVRButtonId.k_EButton_Axis0));
 			if (touchpad.x < 0)
@@ -294,6 +319,7 @@ namespace ZoneCentric
 		{
 			_levelInProgress = false;
 			DestroySphereWithTag(AvatarSphereTag);
+			DestroySphereWithTag(TestSphereTag);
 			_objectCentricZones.Clear();
 			_avatarSpheres.Clear();
 			_ifRestart = true;
@@ -306,6 +332,7 @@ namespace ZoneCentric
 			_currentLevelIndex++;
 			_levelInProgress = false;
 			DestroySphereWithTag(AvatarSphereTag);
+			DestroySphereWithTag(TestSphereTag);
 			_objectCentricZones.Clear();
 			_avatarSpheres.Clear();
 			_lifeRemaining = MaxRetry;
@@ -332,6 +359,54 @@ namespace ZoneCentric
 			return PolarCoordinates.ToCartesian(new PolarCoordinates(0.5f, PolarCoordinates.DegToRad(polar), PolarCoordinates.DegToRad(elevation)));
 		}
 
+		private void SetPrecision()
+		{
+			Instruction.text = "Press <b><size=16>UP</size></b> and <b><size=16>DOWN</size></b> on the <b><size=16>Touchpad</size></b> to set the acceptable size of the zone." + Environment.NewLine +"Once finished, press the <b><size=16>Trigger.</size></b>";
+				
+			_errorThresholdParentSphere.SetActive(true);
+			if (Controller.GetPress(TouchpadButton))
+			{
+				var touchpad = (Controller.GetAxis(Valve.VR.EVRButtonId.k_EButton_Axis0));
+				if (touchpad.y > 0f)
+				{
+//						_errorThresholdRadius += 0.05f;
+					_errorThresholdSphere.transform.localScale += new Vector3(0.05f, 0.05f, 0.05f);
+				}
+				else
+				{
+//						_errorThresholdRadius -= 0.05f;
+					_errorThresholdSphere.transform.localScale -= new Vector3(0.05f, 0.05f, 0.05f);
+				}
+			}
+
+			if (!Controller.GetHairTriggerDown()) return;
+			_errorThresholdSet = true;
+			_errorThresholdParentSphere.SetActive(false);
+			_avatar.SetActive(true);
+
+			switch (_experiment)
+			{
+				case Experiment.OBJECT:
+					_errorThresholdValue = _errorThresholdSphere.GetComponent<Renderer>().bounds.extents.magnitude;
+					break;
+				case Experiment.ZONE:
+					Debug.Log(_errorThresholdSphere.GetComponent<Renderer>().bounds.extents.magnitude + Space + _zoneSphere.GetComponent<Renderer>().bounds.extents.magnitude);
+					_errorThresholdValue = PolarCoordinates.RadToDeg(
+						Mathf.Asin(
+							Mathf.Clamp(
+						_errorThresholdSphere.GetComponent<Renderer>().bounds.extents.magnitude/_zoneSphere.GetComponent<Renderer>().bounds.extents.magnitude, -1f, 1f)
+							)
+						);
+					break;
+				case Experiment.NONE:
+					Debug.Log("Experiment NONE detected!");
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+			Debug.Log("Error Threshold Set!");
+		}
+		
 		private static void CreateZones(Vector3 clickedPoint)
 		{
 			var polarCoordinates = PolarCoordinates.FromCartesian(_user.transform.InverseTransformPoint(clickedPoint));
@@ -345,39 +420,53 @@ namespace ZoneCentric
 
 		private static void NextZone()
 		{
-			_currentSubZone = Rnd.Next(_objectCentricZones.Count);
-			_currentSphere = _avatarSpheres[_currentSubZone];
-			_currentSphere.GetComponent<Renderer>().enabled = true;
+			switch (_experiment)
+			{
+				case Experiment.OBJECT:
+					_currentSubZone = Rnd.Next(_objectCentricZones.Count);
+					_currentSphere = _avatarSpheres[_currentSubZone];
+					_currentSphere.GetComponent<Renderer>().enabled = true;
+					break;
+				case Experiment.ZONE:
+					_currentSphere.transform.position = _zoneSphere.transform.TransformPoint(GenerateSpherePlacement(_currentLevelIndex));
+					break;
+				case Experiment.NONE:
+					Debug.Log("Experiment NONE detected inside NextZone function");
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
 		}
 
 
 
 		private void ObjectCentricExperiment()
 		{
+		
 			if (!_levelInProgress)
 			{
 				if (_objectCentricZones.Count == _currentLevelIndex)
 				{
-					Instruction.text = "Yay! Zones created! Press the touchpad to start the level.";
+					Instruction.text = @"<b><size=16>Yay! Zones created!</size></b>" + Environment.NewLine + "Press the <b><size=16>Touchpad</size></b> to start the level.";
 				}
 				else
 				{
 					if (_objectCentricZones.Count == 0)
 					{
-						Instruction.text = "Press the trigger at any point where you wish to place an object.";
+						Instruction.text = "Press the <b><size=16>Trigger</size></b> at the point where you wish to create the zone.";
 						if (_ifRestart)
 						{
-							Instruction.text = "Sorry! Try again. " + Instruction.text;
+							Instruction.text = "<b><size=16>Sorry! Try again.</size></b>" + Environment.NewLine + Instruction.text;
 						}
 						else
 						{
 							if(_currentLevelIndex > 5)
-								Instruction.text = "Yay! Level Cleared!!! " + Instruction.text;
+								Instruction.text = "<b><size=16>Yay! Level Cleared!!!</size></b>"+ Environment.NewLine + Instruction.text;
 						}
 					}
 					else
 					{
-						Instruction.text = (_currentLevelIndex - _objectCentricZones.Count) + " more to go...";
+						Instruction.text = "<b><size=16>" + (_currentLevelIndex - _objectCentricZones.Count) + "</size></b>" + " more to go...";
 					}
 				}
 				
@@ -399,13 +488,7 @@ namespace ZoneCentric
 			}
 			else
 			{
-				_timer -= Time.deltaTime;
-				_timeSlider.value = _timer/TimeLimit;
-
-				SetColor(_accuSlider, 0.9f, Color.green, Color.red);
-				SetColor(_timeSlider, 0.25f, Color.blue, Color.red);
-
-				_accuSlider.value = (float) _numCorrect / _numAttempted;
+				UpdateSliders();
 				Instruction.text = "";
 				
 				if (_timer > 0)
@@ -428,7 +511,7 @@ namespace ZoneCentric
 						RestartLevel();
 						if (_lifeRemaining <= 0)
 						{
-							Instruction.text = "GAME OVER! To restart, press LEFT for ZoneCentric and RIGHT for ObjectCentric on Touchpad";
+							Instruction.text = "<b><size=16>GAME OVER!</size></b> To restart, press <b><size=16>LEFT</size></b> for ZoneCentric and <b><size=16>RIGHT</size></b> for ObjectCentric on Touchpad";
 							Debug.Log("Game Over");
 							ResetExperiment();
 							return;
@@ -444,21 +527,30 @@ namespace ZoneCentric
 		
 		private void ZoneCentricExperiment()
 		{
+		
 			if (!_levelInProgress)
 			{
 				// Purpose of if-else condition is to display the appropriate message
-				if (_currentLevelIndex == 0) {
-					Instruction.text = "Press the touchpad to start the level!";
-				}
-				else if(_currentLevelIndex < _zoneCentricZones.Count)
+
+				if (_ifRestart)
 				{
-					Instruction.text = "Congratulations! You are moving on to next level! Press the touchpad to start.";
+					Instruction.text = "<b><size=16>Sorry! Try Again.</size></b> Press the <b><size=16>Touchpad</size></b> to start the level!";
 				}
 				else
 				{
-					Instruction.text = "Congrats! Experiment Completed! Press LEFT for ZoneCentric and RIGHT for ObjectCentric on Touchpad";
+					if (_currentLevelIndex == 0) {
+						Instruction.text = "Press the <b><size=16>Touchpad</size></b> to start the level!";
+					}
+					else if(_currentLevelIndex < _zoneCentricZones.Count)
+					{
+						Instruction.text = "<b><size=16>Congratulations!</size></b> You are moving on to the next level! Press the <b><size=16>Touchpad</size></b> to start.";
+					}
+					else
+					{
+						Instruction.text = "<b><size=16>Congrats! Experiment Completed!</size></b> Press <b><size=16>LEFT</size></b> for ZoneCentric and <b><size=16>RIGHT</size></b> for ObjectCentric on Touchpad";
+					}
 				}
-
+				
 				if (_currentLevelIndex < _zoneCentricZones.Count)
 				{
 					if (!Controller.GetPressDown(TouchpadButton)) return;
@@ -473,25 +565,51 @@ namespace ZoneCentric
 			}
 			else
 			{
-				_timer -= Time.deltaTime;
-				_timeSlider.value = (TimeLimit - _timer)/TimeLimit;
-				_accuSlider.value = (float) _numCorrect / _numAttempted;
-
+				UpdateSliders();
 				Instruction.text = "";
 
-				if (IfQualify())
-				{
-					Debug.Log("YOU QUALIFY!!!!!!!!!!!!!!");
-					NextLevel();
-					DestroySphereWithTag(TestSphereTag);
-				}
-				else
+				if (_timer > 0)
 				{
 					if (!Controller.GetHairTriggerDown()) return;
 					var clickedPoint = _user.transform.InverseTransformPoint(ControllerObject.transform.position);
 					IsCorrect(clickedPoint);
-					_currentSphere.transform.position = _zoneSphere.transform.TransformPoint(GenerateSpherePlacement(_currentLevelIndex));
+					NextZone();
 				}
+				else
+				{
+					if (IfQualify())
+					{
+						Debug.Log("YOU QUALIFY!!!!!!!!!!!!!!");
+						NextLevel();
+					}
+					else
+					{
+						RestartLevel();
+						if (_lifeRemaining <= 0)
+						{
+							Instruction.text = "<i>GAME OVER!</i> To restart, press <b><size=16>LEFT</size></b> for ZoneCentric and <b><size=16>RIGHT</size></b> for ObjectCentric on Touchpad";
+							Debug.Log("Game Over");
+							ResetExperiment();
+							return;
+						}
+						Debug.Log("Restart Level");		
+					}					
+				}
+				
+				
+//				if (IfQualify())
+//				{
+//					Debug.Log("YOU QUALIFY!!!!!!!!!!!!!!");
+//					NextLevel();
+//					DestroySphereWithTag(TestSphereTag);
+//				}
+//				else
+//				{
+//					if (!Controller.GetHairTriggerDown()) return;
+//					var clickedPoint = _user.transform.InverseTransformPoint(ControllerObject.transform.position);
+//					IsCorrect(clickedPoint);
+//					_currentSphere.transform.position = _zoneSphere.transform.TransformPoint(GenerateSpherePlacement(_currentLevelIndex));
+//				}
 			}
 		}
 		
@@ -506,6 +624,13 @@ namespace ZoneCentric
 
 			if (_experimentInProgress && _user.IsCalibrated())
 			{
+				if (!_errorThresholdSet)
+				{
+					// set threshold and return
+					SetPrecision();
+					return;
+				}
+				
 				switch (_experiment)
 				{
 					case Experiment.ZONE:
@@ -531,13 +656,35 @@ namespace ZoneCentric
 			if (!_user.IsCalibrated() && (_experiment != Experiment.NONE))
 			{
 				Instruction.text =
-					string.Format("{0} Centric Experiment selected. Use trigger to calibrate the center of shoulders",
+					string.Format("{0} Centric Experiment selected. Put the controller just below the neck and press the <b><size=16>Trigger</size></b> button.",
 						_experiment);
 				if (!Controller.GetHairTriggerDown()) return;
 				_user.Calibrate(new Vector3(_cameraGameObject.transform.position.x, ControllerObject.transform.position.y, _cameraGameObject.transform.position.z));
 				_experimentInProgress = true;
+
 				Debug.Log("Calibration Done!");
+
 			}
+			
+			
+			
+//			// Object centric error threshold
+//			if (_user.IsCalibrated() && !_errorThresholdSet && _experiment == Experiment.OBJECT)
+//			{
+//				
+//
+//			}
+//			
+			
+//			// Zone centric error threshold
+//			if (_user.IsCalibrated() && !_errorThresholdSet && _experiment == Experiment.ZONE)
+//			{
+//			}
+			
+			
+			
+			
+			
 		}
 	}
 }
