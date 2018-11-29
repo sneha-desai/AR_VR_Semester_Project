@@ -1,38 +1,21 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace _Andre._Scripts
 {
     public class LaserPointer : MonoBehaviour
     {
-        public GameObject teleportReticlePrefab;
-
-// 3
-        private GameObject reticle;
-
-// 4
-        private Transform teleportReticleTransform;
-
-// 6
-        public Vector3 teleportReticleOffset;
-
-        // 1
+        [FormerlySerializedAs("teleportReticlePrefab")] public GameObject TeleportReticlePrefab;
+        private GameObject _reticle;
+        private Transform _teleportReticleTransform;
+        [FormerlySerializedAs("teleportReticleOffset")] public Vector3 TeleportReticleOffset;
         public GameObject LaserPrefab;
-
         private SteamVR_TrackedObject _trackedObj;
-
-// 2
         private GameObject _laser;
-
-// 3
         private Transform _laserTransform;
-
-// 4
         private Vector3 _hitPoint;
         private float _distance;
-
-
         private ZoneVR _zoneHovered;
-
         private SteamVR_Controller.Device Controller
         {
             get { return SteamVR_Controller.Input((int) _trackedObj.index); }
@@ -45,85 +28,37 @@ namespace _Andre._Scripts
 
         private void Start()
         {
-            // 1
             _laser = Instantiate(LaserPrefab);
-            // 2
             _laserTransform = _laser.transform;
-            
-            // 3
-            reticle = Instantiate(teleportReticlePrefab);
-// 4
-            teleportReticleTransform = reticle.transform;
+           
+            _reticle = Instantiate(TeleportReticlePrefab);
+            _teleportReticleTransform = _reticle.transform;
         }
 
         private void ShowLaser(float distance)
         {
-            // 1
             _laser.SetActive(true);
-            // 2
             _laserTransform.position = Vector3.Lerp(_trackedObj.transform.position, _hitPoint, .5f);
-            // 3
             _laserTransform.LookAt(_hitPoint);
-            // 4
             _laserTransform.localScale = new Vector3(_laserTransform.localScale.x, _laserTransform.localScale.y,
                 distance);
         }
 
-        // Update is called once per frame
         void Update()
         {
-            
-            // It was for zones...
-//            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
-//            {
-//                if (_zoneHovered != null)
-//                {
-//                    _zoneHovered.OnLaserDown();
-//                }
-//            }
-
-
             RaycastHit hit;
-
-            // 2
             if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
             {
-//                ZoneVR zone = hit.collider.GetComponent<ZoneVR>();
-//                if (zone && !zone.IsHighlighted) 
-//                {
-//                    if (_zoneHovered)
-//                    {
-//                        _zoneHovered.OnLaserExit();
-//                        _zoneHovered = null;
-//                    }
-
-//                    _zoneHovered = zone;
-//                    zone.OnLaserEnter();
-//                }
-
                 _hitPoint = hit.point;
                 _distance = hit.distance;
                 ShowLaser(_distance);
-                // 1
-                reticle.SetActive(true);
-// 2
-                teleportReticleTransform.position = _hitPoint + teleportReticleOffset;
-// 3
+                _reticle.SetActive(true);
+                _teleportReticleTransform.position = _hitPoint + TeleportReticleOffset;
             }
             else
             {
-//                _hitPoint = _trackedObj.transform.forward * 10;
-//                _distance = Vector3.Distance(_trackedObj.transform.position, _hitPoint);
-//                Debug.Log("Hit Point: " + _hitPoint);
-//                Debug.Log("Hit Distance: " + _distance);
-//                if (_zoneHovered != null)
-//                {
-//                    _zoneHovered.OnLaserExit();
-//                    _zoneHovered = null;
-//                }
-
-//                ShowLaser(_distance);
-//                reticle.SetActive(false);
+                _laser.SetActive(false);
+                _reticle.SetActive(false);
             }
         }
     }

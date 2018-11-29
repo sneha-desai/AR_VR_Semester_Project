@@ -33,14 +33,14 @@ namespace _Andre._Scripts
             get { return SteamVR_Controller.Input((int) _trackedObj.index); }
         }
 
-        void Awake()
+        void Start()
         {
             _trackedObj = GetComponent<SteamVR_TrackedObject>();
             _nextPrefab = PrefabArray[_prefabIndex];
             Increment();
             DrawPointTransform = Instantiate(_nextPrefab);
             DrawPointTransform.parent = _trackedObj.transform;
-            DrawPointTransform.localPosition = new Vector3(0,0,10);
+            DrawPointTransform.localPosition = new Vector3(0, 0, 10);
 
             _localScale = DrawPointTransform.localScale;
 
@@ -70,8 +70,6 @@ namespace _Andre._Scripts
             if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
             {
                 _axis = Controller.GetAxis();
-//                Debug.Log(DrawPointTransform.localPosition.z);
-//                Debug.Log(new Vector3(0, 0, (DrawPointTransform.position.z + _axis.y * 0.003f)));
                 DrawPointTransform.transform.localPosition =
                     new Vector3(0, 0, (DrawPointTransform.localPosition.z + _axis.y * _scaleSpeed));
                 if (_axis.x > .8f) DrawPointTransform.localScale *= 1 +_distanceSpeed;

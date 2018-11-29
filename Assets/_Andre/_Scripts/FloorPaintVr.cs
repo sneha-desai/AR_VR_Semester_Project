@@ -6,45 +6,72 @@ namespace _Andre._Scripts
 {
     public class FloorPaintVr : MonoBehaviour
     {
-
+        
+        public GameObject TeleportReticlePrefab;
+        private GameObject _reticle;
+        private Transform _teleportReticleTransform;
+        public Vector3 TeleportReticleOffset;
+        public GameObject LaserPrefab;
+                
         public float DrawRadius = 50.0f;
         public float Intensity = 1.0f;
         public Transform[] PrefabArray;
 
-        private float _cooldown = 1.0f;
-        private bool _mousePressed = false;
+        private SteamVR_TrackedObject _trackedObj;
+        private GameObject _laser;
+        private Transform _laserTransform;
+        private Vector3 _hitPoint;
+        private float _distance;
+        private ZoneVR _zoneHovered;
 
-        // Update is called once per frame
+        private float _cooldown = 1.0f;
+        
+        private SteamVR_Controller.Device Controller
+        {
+            get { return SteamVR_Controller.Input((int) _trackedObj.index); }
+        }
+
+        void Awake()
+        {
+            _trackedObj = GetComponent<SteamVR_TrackedObject>();
+        }
+
+        private void Start()
+        {
+            _laser = Instantiate(LaserPrefab);
+            _laserTransform = _laser.transform;
+           
+            _reticle = Instantiate(TeleportReticlePrefab);
+            _teleportReticleTransform = _reticle.transform;
+        }
+
+        private void ShowLaser(float distance)
+        {
+            _laser.SetActive(true);
+            _laserTransform.position = Vector3.Lerp(_trackedObj.transform.position, _hitPoint, .5f);
+            _laserTransform.LookAt(_hitPoint);
+            _laserTransform.localScale = new Vector3(_laserTransform.localScale.x, _laserTransform.localScale.y,
+                distance);
+        }
+
         void Update()
         {
-            _mousePressed = Input.GetMouseButton(0);
             _cooldown -= Time.deltaTime;
-            if (_mousePressed)
+
+            RaycastHit hit;
+            if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
             {
-                if (_cooldown < 0)
-                {
-                    int layerMask = 1 << 9;
-
-                    layerMask = ~layerMask;
-
-                    _cooldown = 1 / Intensity;
-                    RaycastHit hit;
-                    Vector3 mousePosition = Input.mousePosition;
-                    Vector3 mousePositionWithRadius =
-                        new Vector3(Random.Range(mousePosition.x - DrawRadius, mousePosition.x + DrawRadius),
-                            Random.Range(mousePosition.y - DrawRadius, mousePosition.y + DrawRadius), 0);
-
-                    Debug.Log(mousePositionWithRadius);
-                    if (Physics.Raycast(GetComponent<Camera>().ScreenPointToRay(mousePositionWithRadius), out hit,
-                        Mathf.Infinity, layerMask))
-                    {
-                        Transform objecthit = hit.transform;
-                        float f = Random.Range(0, PrefabArray.Length);
-                        int i = Mathf.RoundToInt(f);
-                        DrawGameObject(PrefabArray[i], hit.point);
-                    }
-                }
+                _hitPoint = hit.point;
+                _distance = hit.distance;
+                ShowLaser(_distance);
+                _reticle.SetActive(true);
+                _teleportReticleTransform.position = _hitPoint + TeleportReticleOffset;
             }
+            else
+            {
+                _laser.SetActive(false);
+                _reticle.SetActive(false);
+            }            
         }
 
         private void DrawGameObject(Transform prefab, Vector3 point)
