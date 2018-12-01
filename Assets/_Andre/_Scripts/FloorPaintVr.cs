@@ -1,21 +1,31 @@
 ﻿using UnityEngine;
-using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
+
 
 namespace _Andre._Scripts
 {
-    public class LaserPointer : MonoBehaviour
+    public class FloorPaintVr : MonoBehaviour
     {
-        [FormerlySerializedAs("teleportReticlePrefab")] public GameObject TeleportReticlePrefab;
+        
+        public GameObject TeleportReticlePrefab;
         private GameObject _reticle;
         private Transform _teleportReticleTransform;
-        [FormerlySerializedAs("teleportReticleOffset")] public Vector3 TeleportReticleOffset;
+        public Vector3 TeleportReticleOffset;
         public GameObject LaserPrefab;
+                
+        public float DrawRadius = 50.0f;
+        public float Intensity = 1.0f;
+        public Transform[] PrefabArray;
+
         private SteamVR_TrackedObject _trackedObj;
         private GameObject _laser;
         private Transform _laserTransform;
         private Vector3 _hitPoint;
         private float _distance;
         private ZoneVR _zoneHovered;
+
+        private float _cooldown = 1.0f;
+        
         private SteamVR_Controller.Device Controller
         {
             get { return SteamVR_Controller.Input((int) _trackedObj.index); }
@@ -46,6 +56,8 @@ namespace _Andre._Scripts
 
         void Update()
         {
+            _cooldown -= Time.deltaTime;
+
             RaycastHit hit;
             if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
             {
@@ -59,7 +71,12 @@ namespace _Andre._Scripts
             {
                 _laser.SetActive(false);
                 _reticle.SetActive(false);
-            }
+            }            
+        }
+
+        private void DrawGameObject(Transform prefab, Vector3 point)
+        {
+            Instantiate(prefab, point, Quaternion.identity);
         }
     }
 }

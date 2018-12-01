@@ -10,7 +10,8 @@ TagManager:
   - Mobile
   - Money
   - Sword
-  - testSphere
+  - AvatarSpheres
+  - TestSpheres
   layers:
   - Default
   - TransparentFX

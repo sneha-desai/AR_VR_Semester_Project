@@ -1,46 +1,67 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Serialization;
 
-public class SkyDraw : MonoBehaviour
+namespace _Andre._Scripts
 {
-    public Transform DrawPointTransform;
-
-    public float radius = 50.0f;
-
-    private float cooldown = 1.0f;
-    public float intensity = 1.0f;
-    private bool _mousePressed = false;
-
-    public Transform[] PrefabArray;
-
-
-    // Use this for initialization
-    void Start()
+    public class SkyDraw : MonoBehaviour
     {
-    }
+        public Transform DrawPointTransform;
+        public Transform[] PrefabArray;
+        private float _cooldown = 1.0f;
 
-    // Update is called once per frame
-    void Update()
-    {
-        _mousePressed = Input.GetMouseButton(0);
-        cooldown -= Time.deltaTime;
+        private SteamVR_TrackedObject _trackedObj;
+        [FormerlySerializedAs("_trackedObj2")] public SteamVR_TrackedObject TrackedObj2;
 
-        Vector3 movement = transform.position * 1.02f;
-        if (_mousePressed)
+
+        private Vector2 _axis;
+        private Vector3 _newObjectScale = Vector3.one;
+
+        private Transform _nextPrefab;
+
+        private float _scaleSpeed = .1f;
+        private float _distanceSpeed = .1f;
+
+        private SteamVR_Controller.Device Controller
         {
-            if (cooldown < 0)
+            get { return SteamVR_Controller.Input((int) _trackedObj.index); }
+        }
+
+        void Awake()
+        {
+            _trackedObj = GetComponent<SteamVR_TrackedObject>();
+            _nextPrefab = PrefabArray[0];
+        }
+
+        void Update()
+        {
+            _cooldown -= Time.deltaTime;
+
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Trigger))
             {
-                float f = Random.Range(0, PrefabArray.Length);
-                int i = Mathf.RoundToInt(f);
-                DrawGameObject(PrefabArray[i], DrawPointTransform.position);
+                if (_cooldown < 0)
+                {
+                    int i = Mathf.RoundToInt(Random.Range(0, PrefabArray.Length));
+                    DrawGameObject(_nextPrefab, DrawPointTransform.position);
+                }
+            }
+
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
+            {
+                _axis = Controller.GetAxis();
+//                Debug.Log(DrawPointTransform.localPosition.z);
+//                Debug.Log(new Vector3(0, 0, (DrawPointTransform.position.z + _axis.y * 0.003f)));
+                DrawPointTransform.transform.localPosition =
+                    new Vector3(0, 0, (DrawPointTransform.localPosition.z + _axis.y * _scaleSpeed));
+                if (_axis.x > .8f) DrawPointTransform.localScale *= 1 +_distanceSpeed;
+                if (_axis.x < -.8f) DrawPointTransform.localScale *= 1 - _distanceSpeed;
+                _newObjectScale = DrawPointTransform.localScale;
             }
         }
-    }
 
-    void DrawGameObject(Transform transform, Vector3 point)
-    {
-        Debug.Log("DrawGameObject");
-        Instantiate(transform, point, Quaternion.identity);
+        void DrawGameObject(Transform trans, Vector3 point)
+        {
+            Transform o = Instantiate(trans, point, Quaternion.identity);
+            o.localScale = _newObjectScale;
+        }
     }
 }

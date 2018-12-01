@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ZoneCentric;
 
-public class Human : MonoBehaviour
+public class User : MonoBehaviour
 {
 
 	public Vector3 origin = new Vector3();
@@ -22,6 +22,11 @@ public class Human : MonoBehaviour
 		origin = point;
 		transform.position = point;
 		_isCalibrated = true;
+	}
+
+	public void Reset()
+	{
+		_isCalibrated = false;
 	}
 	
 	// Use this for initialization

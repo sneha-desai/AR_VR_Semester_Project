@@ -9,33 +9,7 @@ using Random = System.Random;
 
 namespace ZoneCentric
 {
-	public class PolarCoordinates
-	{ 
-		public float Radius;
-		public float Polar;
-		public float Elevation;
-
-		public static PolarCoordinates FromCartesian(Vector3 cartesianCoordinate)
-		{
-			PolarCoordinates temp = new PolarCoordinates {Radius = cartesianCoordinate.magnitude};
-
-			if (cartesianCoordinate.x == 0f)
-				cartesianCoordinate.x = Mathf.Epsilon;
-
-			temp.Polar = Mathf.Atan(cartesianCoordinate.z / cartesianCoordinate.x);
-
-			if (cartesianCoordinate.x < 0f)
-				temp.Polar += Mathf.PI;
-
-			if ((cartesianCoordinate.z < 0f) && (cartesianCoordinate.x > 0f))
-				temp.Polar += Mathf.PI * 2f;
-            
-			temp.Elevation = Mathf.Asin(Mathf.Clamp(cartesianCoordinate.y / temp.Radius, -1f, 1f));
-
-			return temp;
-		}
-
-	}
+	
 
 	public class Bound : MonoBehaviour {
 	
@@ -54,9 +28,9 @@ namespace ZoneCentric
 		public static bool RotateAvatar = true;
 		public static bool DebugMode = false;
 		public static List<Zones> ZONES;
-		private static GameObject _human;
-		private static Human HUMAN;
-		public TextMesh Instruction;
+		private static GameObject _userGameObject;
+		private static User _user;
+		public static TextMesh Instruction;
 
 		// Index in the ZONES array. It signifies the index to the level currently being experimented
 		private static int _currentLevelIndex;
@@ -111,8 +85,8 @@ namespace ZoneCentric
 			_currentLevelIndex = -1;
 			_levelInProgress = false;
 //			_randZones = InitRandSubZoneArray();
-			_human = GameObject.Find("Human");
-			HUMAN = _human.GetComponent<Human>();
+			_userGameObject = GameObject.Find("User");
+			_user = _userGameObject.GetComponent<User>();
 			Instruction = GameObject.Find("Instruction").GetComponent<TextMesh>();
 
 		}
@@ -128,7 +102,6 @@ namespace ZoneCentric
 			sphere.transform.position = _zoneSphere.transform.TransformPoint(center);
 			sphere.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 			sphere.GetComponent<Renderer>().material.color = Color.Lerp(Color.magenta, Color.yellow, center.y);
-		
 		}
 
 		private void DrawTriangle(Vector3 pt1, Vector3 pt2, Vector3 pt3)
@@ -243,11 +216,6 @@ namespace ZoneCentric
 			_zoneSphere.GetComponent<MeshRenderer>().materials = materials;
 		}
 
-		private void StartLevel()
-		{
-			_currentRandZonesIndex = 0;
-			_levelInProgress = true;
-		}
 
 		private float[] GetRangeOfZone()
 		{
@@ -306,6 +274,12 @@ namespace ZoneCentric
 			_ExperimentInProgress = false;
 		}
 
+		private void StartLevel()
+		{
+			_currentRandZonesIndex = 0;
+			_levelInProgress = true;
+		}
+		
 		private void NextLevel()
 		{
 			_currentLevelIndex += 1;
@@ -315,8 +289,8 @@ namespace ZoneCentric
 		private void Update () 
 		{
 			if (RotateAvatar) RotateObject(_avatar);
-//			Debug.Log(HUMAN.is);
-			if (HUMAN.IsCalibrated())
+
+			if (_user.IsCalibrated())
 			{
 				if (!_ExperimentInProgress)
 				{
@@ -335,7 +309,7 @@ namespace ZoneCentric
 
 						// correction function
 						var transformedClickedPoint =
-							_human.transform.InverseTransformPoint(_trackedObj.transform.position);
+							_user.transform.InverseTransformPoint(_trackedObj.transform.position);
 						var isCorrect = PointInSector(PolarCoordinates.FromCartesian(transformedClickedPoint),
 							range[0], range[1], range[2], range[3]);
 						if (isCorrect)
@@ -383,7 +357,7 @@ namespace ZoneCentric
 //						Debug.Log("Camera position wrt human: " + _human.transform.InverseTransformPoint(_camera.transform.position));
 //						Debug.Log("Human Position wrt human: " + _human.transform.InverseTransformPoint(_human.transform.position));
 //						Debug.Log("transformed point: " + _human.transform.InverseTransformPoint(_trackedObj.transform.position));
-						HUMAN.Calibrate(new Vector3(_camera.transform.position.x, _trackedObj.transform.position.y, _camera.transform.position.z));
+						_user.Calibrate(new Vector3(_camera.transform.position.x, _trackedObj.transform.position.y, _camera.transform.position.z));
 				}
 
 			}
