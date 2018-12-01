@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 
@@ -6,15 +7,14 @@ namespace _Andre._Scripts
 {
     public class FloorPaintVr : MonoBehaviour
     {
-        
+
+        public float Cooldown = 1.0f;
+        public Transform DrawPointTransform;
         public GameObject TeleportReticlePrefab;
-        private GameObject _reticle;
-        private Transform _teleportReticleTransform;
+        public float Step = 0.0f;
+        public bool SingleMode = true;
         public Vector3 TeleportReticleOffset;
         public GameObject LaserPrefab;
-                
-        public float DrawRadius = 50.0f;
-        public float Intensity = 1.0f;
         public Transform[] PrefabArray;
 
         private SteamVR_TrackedObject _trackedObj;
@@ -23,9 +23,17 @@ namespace _Andre._Scripts
         private Vector3 _hitPoint;
         private float _distance;
         private ZoneVR _zoneHovered;
+        private Transform _nextPrefab;
+        private int _prefabIndex = 0;
 
-        private float _cooldown = 1.0f;
-        
+        private GameObject _reticle;
+        private Transform _teleportReticleTransform;
+
+        private Vector3 _localScale;
+        private float _scaleSpeed = 0.3f;
+        private Vector3 _lastPoint = Vector3.zero;
+
+
         private SteamVR_Controller.Device Controller
         {
             get { return SteamVR_Controller.Input((int) _trackedObj.index); }
@@ -40,9 +48,25 @@ namespace _Andre._Scripts
         {
             _laser = Instantiate(LaserPrefab);
             _laserTransform = _laser.transform;
-           
+
             _reticle = Instantiate(TeleportReticlePrefab);
             _teleportReticleTransform = _reticle.transform;
+
+            _nextPrefab = PrefabArray[_prefabIndex];
+            Increment();
+            DrawPointTransform = Instantiate(_nextPrefab);
+            DrawPointTransform.parent = _teleportReticleTransform.parent;
+//            DrawPointTransform.localPosition = _reticle.transform.localPosition;
+            _localScale = DrawPointTransform.localScale;
+        }
+
+        void Increment()
+        {
+            _prefabIndex++;
+            if (_prefabIndex >= PrefabArray.Length)
+            {
+                _prefabIndex = 0;
+            }
         }
 
         private void ShowLaser(float distance)
@@ -56,9 +80,12 @@ namespace _Andre._Scripts
 
         void Update()
         {
-            _cooldown -= Time.deltaTime;
+            Vector2 _axis;
+            Cooldown -= Time.deltaTime;
 
             RaycastHit hit;
+            
+
             if (Physics.Raycast(_trackedObj.transform.position, transform.forward, out hit, 100))
             {
                 _hitPoint = hit.point;
@@ -66,17 +93,60 @@ namespace _Andre._Scripts
                 ShowLaser(_distance);
                 _reticle.SetActive(true);
                 _teleportReticleTransform.position = _hitPoint + TeleportReticleOffset;
+                DrawPointTransform.position = _teleportReticleTransform.position;
             }
             else
             {
                 _laser.SetActive(false);
                 _reticle.SetActive(false);
-            }            
+            }
+
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
+            {
+                _axis = Controller.GetAxis();
+                if (_axis.x > .8f) DrawPointTransform.localScale *= 1 + _scaleSpeed;
+                if (_axis.x < -.8f) DrawPointTransform.localScale *= 1 - _scaleSpeed;
+                _localScale = DrawPointTransform.localScale;
+            }
+            
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Trigger) && SingleMode == false)
+            {
+                if (Cooldown < 0)
+                {
+                    DrawGameObject(_nextPrefab, DrawPointTransform.position);
+                }
+            }
+
+            if (Controller.GetHairTriggerDown() && SingleMode)
+            {
+                if (Cooldown < 0)
+                {
+                    DrawGameObject(_nextPrefab, DrawPointTransform.position);
+                }
+            }
+
+            if (Controller.GetHairTriggerUp())
+            {
+                Debug.Log(gameObject.name + " Trigger Release");
+            }
         }
 
-        private void DrawGameObject(Transform prefab, Vector3 point)
+        void DrawGameObject(Transform trans, Vector3 point)
         {
-            Instantiate(prefab, point, Quaternion.identity);
+            if (Vector3.Distance(point, _lastPoint) > Step || _lastPoint == Vector3.zero)
+            {
+                _lastPoint = point;
+                DrawPointTransform.parent = transform.parent.parent;
+                DrawPointTransform
+                    .DOMove(
+                        new Vector3(DrawPointTransform.position.x, DrawPointTransform.position.y-1,
+                            DrawPointTransform.position.z), 1).From();
+                _nextPrefab = PrefabArray[_prefabIndex];
+                DrawPointTransform = Instantiate(_nextPrefab);
+                DrawPointTransform.parent = _trackedObj.transform;
+                DrawPointTransform.localScale = _localScale;
+                Increment();
+            }
         }
     }
 }

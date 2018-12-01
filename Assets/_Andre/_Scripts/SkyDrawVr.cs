@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using DG.Tweening;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace _Andre._Scripts
@@ -20,13 +21,13 @@ namespace _Andre._Scripts
 
         private Transform _nextPrefab;
 
-        private float _scaleSpeed = .1f;
-        private float _distanceSpeed = .1f;
+        private float _scaleSpeed = .2f;
+        private float _distanceSpeed = .3f;
         private Vector3 _lastPoint = Vector3.zero;
 
         private int _prefabIndex = 0;
         private Vector3 _localScale;
-        private float _localDistance = 10.0f;
+        private float _localDistance = 100.0f;
 
         private SteamVR_Controller.Device Controller
         {
@@ -71,9 +72,9 @@ namespace _Andre._Scripts
             {
                 _axis = Controller.GetAxis();
                 DrawPointTransform.transform.localPosition =
-                    new Vector3(0, 0, (DrawPointTransform.localPosition.z + _axis.y * _scaleSpeed));
-                if (_axis.x > .8f) DrawPointTransform.localScale *= 1 +_distanceSpeed;
-                if (_axis.x < -.8f) DrawPointTransform.localScale *= 1 - _distanceSpeed;
+                    new Vector3(0, 0, (DrawPointTransform.localPosition.z + _axis.y * _distanceSpeed));
+                if (_axis.x > .8f) DrawPointTransform.localScale *= 1 +_scaleSpeed;
+                if (_axis.x < -.8f) DrawPointTransform.localScale *= 1 - _scaleSpeed;
                 _localScale = DrawPointTransform.localScale;
                 _localDistance = DrawPointTransform.transform.localPosition.z;
                 _newObjectScale = DrawPointTransform.localScale;
@@ -99,6 +100,7 @@ namespace _Andre._Scripts
             {
                 _lastPoint = point;
                 DrawPointTransform.parent = transform.parent.parent;
+                DrawPointTransform.DOMove(DrawPointTransform.position*3, 1).From();
                 _nextPrefab = PrefabArray[_prefabIndex];
                 DrawPointTransform = Instantiate(_nextPrefab);
                 DrawPointTransform.parent = _trackedObj.transform;
