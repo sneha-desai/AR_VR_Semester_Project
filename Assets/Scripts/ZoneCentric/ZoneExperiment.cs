@@ -49,6 +49,7 @@ namespace ZoneCentric
 		private const string AvatarSphereTag = "AvatarSpheres";
 		private const string TestSphereTag = "TestSpheres";
 		private const float TimeLimit = 40.0f;
+		private const float avatarHeadSize = 0.3415f;
 
 		private static bool _errorThresholdSet;
 		private static float _errorThresholdValue;	// Radius for OBJECT centric and theta (in degrees) for ZONE centric
@@ -410,7 +411,7 @@ namespace ZoneCentric
 		private static void CreateZones(Vector3 clickedPoint)
 		{
 			var polarCoordinates = PolarCoordinates.FromCartesian(_user.transform.InverseTransformPoint(clickedPoint));
-			polarCoordinates.Radius = 0.5f;
+//			polarCoordinates.Radius = 0.5f;
 			_objectCentricZones.Add(clickedPoint);
 			_avatarSpheres.Add(DrawSphere(_zoneSphere.transform.TransformPoint(PolarCoordinates.ToCartesian(polarCoordinates)), _zoneSphere.transform, AvatarSphereTag));
 
@@ -484,6 +485,9 @@ namespace ZoneCentric
 				{
 					if (!Controller.GetHairTriggerDown()) return;
 					CreateZones(ControllerObject.transform.position);
+					var controllerPoint = _user.transform.position;
+					var cameraPoint = GameObject.Find("Camera (eye)").transform.position;
+					Debug.Log(controllerPoint.x + Space + controllerPoint.y + Space + controllerPoint.z + " ------- " + cameraPoint.x + Space + cameraPoint.y + Space + cameraPoint.z);
 				}
 			}
 			else
