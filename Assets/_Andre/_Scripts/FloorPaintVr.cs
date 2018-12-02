@@ -1,5 +1,8 @@
-﻿using DG.Tweening;
+﻿using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
+using Valve.VR;
+using ZoneCentric;
 using Random = UnityEngine.Random;
 
 
@@ -32,6 +35,11 @@ namespace _Andre._Scripts
         private Vector3 _localScale;
         private float _scaleSpeed = 0.3f;
         private Vector3 _lastPoint = Vector3.zero;
+        
+        
+        //ZonceCentric
+        private static List<Zones> _zoneCentricZones;
+        private static int _currentLevelIndex;
 
 
         private SteamVR_Controller.Device Controller
@@ -58,6 +66,12 @@ namespace _Andre._Scripts
             DrawPointTransform.parent = _teleportReticleTransform.parent;
 //            DrawPointTransform.localPosition = _reticle.transform.localPosition;
             _localScale = DrawPointTransform.localScale;
+            
+            
+            //ZoneCentric Code
+            _zoneCentricZones = Interface.GetZones();
+            _currentLevelIndex = 1;
+
         }
 
         void Increment()
@@ -129,6 +143,13 @@ namespace _Andre._Scripts
             {
                 Debug.Log(gameObject.name + " Trigger Release");
             }
+
+            if (Controller.GetPressDown(EVRButtonId.k_EButton_Grip))
+            {
+                int zone = ZoneExperiment.GetZone(_trackedObj.transform.position);
+                Debug.Log(zone + " " + );
+            }
+            
         }
 
         void DrawGameObject(Transform trans, Vector3 point)
