@@ -5,7 +5,6 @@ using Valve.VR;
 using ZoneCentric;
 using Random = UnityEngine.Random;
 
-
 namespace _Andre._Scripts
 {
     public class FloorPaintVr : MonoBehaviour
@@ -37,9 +36,11 @@ namespace _Andre._Scripts
         private Vector3 _lastPoint = Vector3.zero;
         
         
-        //ZonceCentric
+        //ZoneCentric
         private static List<Zones> _zoneCentricZones;
         private static int _currentLevelIndex;
+        private GameObject _reference;
+        private GameObject _cameraObject;
 
 
         private SteamVR_Controller.Device Controller
@@ -56,7 +57,7 @@ namespace _Andre._Scripts
         {
             _laser = Instantiate(LaserPrefab);
             _laserTransform = _laser.transform;
-
+            
             _reticle = Instantiate(TeleportReticlePrefab);
             _teleportReticleTransform = _reticle.transform;
 
@@ -71,7 +72,9 @@ namespace _Andre._Scripts
             //ZoneCentric Code
             _zoneCentricZones = Interface.GetZones();
             _currentLevelIndex = 1;
-
+            _reference = GameObject.Find("Reference");
+            _cameraObject = GameObject.Find("Camera (eye)");
+     
         }
 
         void Increment()
@@ -90,6 +93,39 @@ namespace _Andre._Scripts
             _laserTransform.LookAt(_hitPoint);
             _laserTransform.localScale = new Vector3(_laserTransform.localScale.x, _laserTransform.localScale.y,
                 distance);
+        }
+
+        private int GetZone()
+        {
+            int zone = -1;
+            Vector3 clickedPoint = _cameraObject.transform.InverseTransformPoint(_trackedObj.transform.position);
+            //Debug.Log("controller point in world space " + _trackedObj.transform.position.x + " " + _trackedObj.transform.position.y + " " + _trackedObj.transform.position.z);
+            //Debug.Log("controller point in sphere space " + _trackedObj.transform.InverseTransformPoint(_trackedObj.transform.position).x*10f + " " + (_trackedObj.transform.InverseTransformPoint(_trackedObj.transform.position).y + 0.32f)*10f + " " + _trackedObj.transform.InverseTransformPoint(_trackedObj.transform.position).z*10f);
+
+            var polarPoint = PolarCoordinates.FromCartesian(clickedPoint);
+
+            var polar = PolarCoordinates.RadToDeg(polarPoint.Polar);
+            var elevation = PolarCoordinates.RadToDeg(polarPoint.Elevation);
+
+            Debug.Log("in sphere space as per function " + clickedPoint.x + " " + clickedPoint.y + " " + clickedPoint.z + " " + polar + " " + elevation);
+
+
+            //Vector3 clickedPoint = transform.InverseTransformPoint(_trackedObj.transform.position);
+
+            //            print("ClickedPoint: " + clickedPoint);
+            List<float> _subzones = _zoneCentricZones[_currentLevelIndex].SubZones;
+            for (int i = 0; i < _subzones.Count / 4; i++)
+            {
+                //Debug.Log("Checking subzone: " + i);
+                if (Interface.CheckPointInZone(clickedPoint, _zoneCentricZones, _currentLevelIndex, i))
+                {
+                    zone = i;
+                }
+            }
+
+            //print("Cartesian ClickedPoint: " + clickedPoint + " Polar ClickedPoint: polar " + polar + " elevation " + elevation +" zone: " + zone);
+
+            return zone;
         }
 
         void Update()
@@ -146,10 +182,21 @@ namespace _Andre._Scripts
 
             if (Controller.GetPressDown(EVRButtonId.k_EButton_Grip))
             {
-                int zone = ZoneExperiment.GetZone(_trackedObj.transform.position);
-                Debug.Log(zone + " " + );
+                //var camera = GameObject.Find("Camera (eye)");
+               //var camerapos = camera.transform.position;
+              //var refpos = _reference.transform.position;
+                //            Debug.Log("camera early: " + camerapos.x + " " + camerapos.y + " " + camerapos.z);
+                //          Debug.Log("ref early: " + refpos.x + " " + refpos.y + " " + refpos.z);
+                //        refpos = new Vector3(camerapos.x, camerapos.y - 0.32f, camerapos.z);
+                //_reference.transform.position = refpos;
+                //      Debug.Log("camera later: " + camerapos.x + " " + camerapos.y + " " + camerapos.z);
+                //    Debug.Log("ref later: " + refpos.x + " " + refpos.y + " " + refpos.z);
+                //refpos = camerapos;
+                //_reference.transform.position = refpos;
+                int zone = GetZone();
+                Debug.Log("zone: " + zone);
             }
-            
+
         }
 
         void DrawGameObject(Transform trans, Vector3 point)

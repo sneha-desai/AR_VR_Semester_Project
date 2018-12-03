@@ -495,6 +495,7 @@ namespace ZoneCentric
 				{
 					if (!Controller.GetHairTriggerDown()) return;
 					var clickedPoint = ControllerObject.transform.position;
+					Debug.Log("clickedPoint: " + clickedPoint);
 					IsCorrect(clickedPoint);
 					_currentSphere.GetComponent<Renderer>().enabled = false;
 					NextZone();
