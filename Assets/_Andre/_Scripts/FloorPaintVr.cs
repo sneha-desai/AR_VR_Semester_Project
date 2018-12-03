@@ -54,6 +54,8 @@ namespace _Andre._Scripts
 
         private void Start()
         {
+            TeleportReticlePrefab = Resources.Load<GameObject>("utils/TeleportReticle");
+            LaserPrefab = Resources.Load<GameObject>("utils/Laser");
             _laser = Instantiate(LaserPrefab);
             _laserTransform = _laser.transform;
 
@@ -62,7 +64,7 @@ namespace _Andre._Scripts
 
             _nextPrefab = PrefabArray[_prefabIndex];
             Increment();
-            DrawPointTransform = Instantiate(_nextPrefab);
+            DrawPointTransform = Instantiate(TeleportReticlePrefab.transform);
             DrawPointTransform.parent = _teleportReticleTransform.parent;
 //            DrawPointTransform.localPosition = _reticle.transform.localPosition;
             _localScale = DrawPointTransform.localScale;

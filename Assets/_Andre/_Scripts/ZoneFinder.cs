@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using ZoneCentric;
 using UnityEngine;
 using Valve.VR;
+using DigitalRuby.RainMaker;
 
 public class ZoneFinder : MonoBehaviour {
     private SteamVR_TrackedObject _trackedObj;
+    private Transform[] PrefabArray;
+    private string PrefabType;
     //ZoneCentric
     private static List<Zones> _zoneCentricZones;
     private static int _currentLevelIndex;
@@ -55,6 +58,33 @@ public class ZoneFinder : MonoBehaviour {
         return zone;
     }
 
+    private void initializer(string type, Transform[] prefabs)
+    {
+        type = "storm";
+        Debug.Log("The type of is " + type);
+        if (type == "drawable")
+        {
+            _Andre._Scripts.FloorPaintVr floorPaintVr = _trackedObj.gameObject.AddComponent<_Andre._Scripts.FloorPaintVr>();
+            floorPaintVr.PrefabArray = prefabs;
+            return;
+        }
+        if (type == "rain")
+        {
+            GameObject rainPrefab = Resources.Load<GameObject>("RainPrefab");
+            GameObject _rainInstance = Instantiate(rainPrefab);
+            RainController rainController = _trackedObj.gameObject.AddComponent<RainController>();
+            RainController.rain = _rainInstance;
+        }
+        if (type == "storm")
+        {
+            GameObject stormPrefab = Resources.Load<GameObject>("Storm");
+            GameObject _stormInstance = Instantiate(stormPrefab);
+            _stormInstance.transform.position = new Vector3(transform.position.x, transform.position.y - 3, transform.position.z);
+            //RainController rainController = _trackedObj.gameObject.AddComponent<RainController>();
+            //RainController.rain = _rainInstance;
+        }
+    }
+
     // Use this for initialization
     void Start () {
         //ZoneCentric Code
@@ -70,7 +100,9 @@ public class ZoneFinder : MonoBehaviour {
         {
             int zone = GetZone();
             Debug.Log("zone: " + zone);
-            //PrefabArray = ZoneDictionary.GetPrefabArrayForZone(zone);
+            PrefabArray = ZoneDictionary.GetPrefabArrayForZone(zone);
+            PrefabType = ZoneDictionary.GetTypeForZone(zone);
+            initializer(PrefabType, PrefabArray);
         }
     }
 }
