@@ -146,8 +146,6 @@ namespace _Andre._Scripts
 
             if (Controller.GetPressDown(EVRButtonId.k_EButton_Grip))
             {
-                int zone = ZoneExperiment.GetZone(_trackedObj.transform.position);
-                Debug.Log(zone + " " + );
             }
             
         }
