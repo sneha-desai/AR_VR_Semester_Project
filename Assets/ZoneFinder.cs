@@ -70,7 +70,7 @@ public class ZoneFinder : MonoBehaviour {
         {
             int zone = GetZone();
             Debug.Log("zone: " + zone);
-            PrefabArray = ZoneDictionary.GetPrefabArrayForZone(zone);
+            //PrefabArray = ZoneDictionary.GetPrefabArrayForZone(zone);
         }
     }
 }
