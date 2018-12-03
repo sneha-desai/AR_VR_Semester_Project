@@ -62,6 +62,7 @@ namespace _Andre._Scripts
 
         void Update()
         {
+            return;
             Cooldown -= Time.deltaTime;
 
             RaycastHit hit;

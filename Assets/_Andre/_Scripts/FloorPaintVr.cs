@@ -128,7 +128,14 @@ namespace _Andre._Scripts
             return zone;
         }
 
-        void Update()
+        private bool _isDrawable ()
+        {
+            bool isDable = _teleportReticleTransform && DrawPointTransform && _teleportReticleTransform.gameObject != null && DrawPointTransform.gameObject != null;
+            Debug.Log("isDrawable is " + isDable);
+            return isDable;
+        }
+
+        void FixedUpdate()
         {
             Vector2 _axis;
             Cooldown -= Time.deltaTime;
@@ -143,7 +150,10 @@ namespace _Andre._Scripts
                 ShowLaser(_distance);
                 _reticle.SetActive(true);
                 _teleportReticleTransform.position = _hitPoint + TeleportReticleOffset;
-                DrawPointTransform.position = _teleportReticleTransform.position;
+                if (_isDrawable())
+                {
+                    DrawPointTransform.position = _teleportReticleTransform.position;
+                }
             }
             else
             {
@@ -151,7 +161,7 @@ namespace _Andre._Scripts
                 _reticle.SetActive(false);
             }
 
-            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad))
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Touchpad) && _isDrawable())
             {
                 _axis = Controller.GetAxis();
                 if (_axis.x > .8f) DrawPointTransform.localScale *= 1 + _scaleSpeed;
@@ -159,7 +169,7 @@ namespace _Andre._Scripts
                 _localScale = DrawPointTransform.localScale;
             }
             
-            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Trigger) && SingleMode == false)
+            if (Controller.GetPress(SteamVR_Controller.ButtonMask.Trigger) && SingleMode == false && _isDrawable())
             {
                 if (Cooldown < 0)
                 {
@@ -167,8 +177,9 @@ namespace _Andre._Scripts
                 }
             }
 
-            if (Controller.GetHairTriggerDown() && SingleMode)
+            if (Controller.GetHairTriggerDown() && SingleMode && _isDrawable())
             {
+                Debug.Log("Inside single Mode");
                 if (Cooldown < 0)
                 {
                     DrawGameObject(_nextPrefab, DrawPointTransform.position);
@@ -195,8 +206,8 @@ namespace _Andre._Scripts
                 //_reference.transform.position = refpos;
                 int zone = GetZone();
                 Debug.Log("zone: " + zone);
+                PrefabArray = ZoneDictionary.GetPrefabArrayForZone(zone);
             }
-
         }
 
         void DrawGameObject(Transform trans, Vector3 point)
@@ -209,6 +220,8 @@ namespace _Andre._Scripts
                     .DOMove(
                         new Vector3(DrawPointTransform.position.x, DrawPointTransform.position.y-1,
                             DrawPointTransform.position.z), 1).From();
+                Debug.Log(PrefabArray);
+                Debug.Log(PrefabArray[_prefabIndex]);
                 _nextPrefab = PrefabArray[_prefabIndex];
                 DrawPointTransform = Instantiate(_nextPrefab);
                 DrawPointTransform.parent = _trackedObj.transform;
